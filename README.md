@@ -22,8 +22,8 @@ python run_dataset.py --task TASK --section SECTION [--case CASE] [--turn TURN] 
 
 - `--task` (Required): Specify the task to run. Options are `student` or `examiner`.
 - `--section` (Required): Specify the section name from the dataset to process. Options are `qa`, `physical_exam`, `closure`, or `diagnosis`.
-- `--case` (default: `1-10`): Specify the case number or range of cases to run. Use a hyphen (-) to specify a range (e.g., `1-10`).
-- `--turn` (default: `all`): Specify the conversation turn or range of turns to run. Use a hyphen (-) to specify a range (e.g., `1-5`).
+- `--case` (default: `1-10`): Specify the case number or range of cases to run. Use a hyphen (-) to specify a range. (e.g. `5-12`)
+- `--turn` (default: `all`): Specify the conversation turn or range of turns to run. Use a hyphen (-) to specify a range.  Use `all` to run all turns. (e.g. `1-5`)
 - `--dataset` (default: `dataset`): Specify the path to the dataset directory or the dataset JSON file.
 - `--output` (default: `output`): Specify the directory where the output results will be stored.
 - `-m`, `--model` (default: `gpt-4`): Specify the model name to use for the LLM.
@@ -67,6 +67,15 @@ python run_dataset.py --task examiner --section physical_exam --case 5 --dataset
 - Make sure you have the required dependencies installed (`langchain`, `langchain_openai`, `python-dotenv`) before running the program.
 - The langchain library is used for interacting with the LLM. Ensure you have the necessary permissions and API keys if required by the library.
 
+## Todo
+- Add `all` task
+- Store result to new dataset
+- Add `prompt_path`
+- Add `student_model`, `student_input_model`, `examiner_model`
+- Add model name similar matching
+- Add data viewer
+- Add logging
+
 # Dataset Format
 
 ## `generation.json`
@@ -81,9 +90,9 @@ Each entry in the JSON file is structured as follows:
     - `closure`: Closure section.
     - `diagnosis`: Diagnosis section.
 
-- `Case ID`: The identifier of the case number, ranging from 1 to 44.
+- `case_id`: The identifier of the case number, ranging from 1 to 44.
 
-- `Conversation Turn ID`: Indicates the sequence of dialogue for the `qa` section. All other sections have `Conversation Turn ID` with 1.
+- `conversation_turn_id`: Indicates the sequence of dialogue for the `qa` section. All other sections have `conversation_turn_id` with 1.
 
 - `input`: An object containing the input variable name and input data.
 
@@ -94,7 +103,7 @@ Each entry in the JSON file is structured as follows:
     - `input_variables`: An array of input variable names used in the prompt template.
     - `template`: A prompt template that includes placeholders for the input variables.
 
-- `output`: An object containing the output model name and output data generate from that model.
+- `output`: An object containing the running model name and output data generate from that model.
 
 ### Example Case Object
 ```
@@ -141,14 +150,14 @@ Each entry in the JSON file is structured as follows:
 
 - `conversation_turn_id`: Indicates the sequence of dialogue for the `qa` section. All other sections have `conversation_turn_id` with 1.
 
-- `input`: An object containing the model name that generate this input data waiting for evaluating, and another object for each model name containing the input variable name and input data.
+- `input`: An object containing the model name that generate this input data waiting for evaluating, and another object for each input model name containing the input variable name and input data.
 
 - `prompt`: An object containing the prompt:
     - `_type`: A string indicate this a prompt
     - `input_variables`: An array of input variable names used in the prompt template.
     - `template`: A prompt template that includes placeholders for the input variables.
 
-- `result`: An object containing the model name for the input data and evaluation result from the model.
+- `result`: An object containing the model name for the input data and evaluation result for that input model name.
 
 ### Example Case Object
 ```
