@@ -67,9 +67,9 @@ def load_data(dataset_path, generation):
 
 
 # Create a lookup dictionary to map sections and case IDs to conversation turns
-def save_result(path: str, result: str):
+def save_result(path: str, result: dict):
     with open(path, "w", encoding="UTF-8") as f:
-        f.write(result)
+        json.dump(result, f, indent=2)
 
 
 # Function to parse a range or a single number from a string
@@ -168,7 +168,8 @@ def llm_as_medical_student(
         for turn in range(start_conversation_turn, end_conversation_turn + 1):
             print(f"Running case {case}, turn {turn}")
 
-            data = dataset[lookup[section][case][turn]]
+            index = lookup[section][case][turn]
+            data = dataset[index]
             if prompt_template is None:
                 prompt_template = data["prompt"]["template"]
             if input_data is None:
@@ -193,16 +194,13 @@ def llm_as_medical_student(
             )
 
             # save result
-            output_path = os.path.join(
-                os.getcwd(), output_dir, "student", section, llm.model_name
-            )
+            dataset[index]["output"][llm.model_name] = result
+
+            output_path = os.path.join(os.getcwd(), output_dir)
             if not os.path.isdir(output_path):
                 os.makedirs(output_path)
-            if section == Section.qa.value:
-                file_name = f"case{case}-turn{turn}.txt"
-            else:
-                file_name = f"case{case}.txt"
-            save_result(os.path.join(output_path, file_name), result)
+                output_path = os.path.join(output_path, "generation.json")
+            save_result(output_path, dataset)
 
     print("Finish")
 
@@ -217,7 +215,7 @@ def llm_as_examiner(
     model_parameters=None,
     prompt_template: str = None,
     input_data: dict[str:str] = None,
-    input_model_name: str = None,
+    student_input_model_name: str = None,
     pre_processing: Callable = None,
     post_processing: Callable = None,
     **kwargs,
@@ -247,18 +245,19 @@ def llm_as_examiner(
         for turn in range(start_conversation_turn, end_conversation_turn + 1):
             print(f"Running case {case}, turn {turn}")
 
-            data = dataset[lookup[section][case][turn]]
+            index = lookup[section][case][turn]
+            data = dataset[index]
             if prompt_template is None:
                 prompt_template = data["prompt"]["template"]
             if input_data is None:
-                if input_model_name is None:
+                if student_input_model_name is None:
                     print(
                         "Missing model name specified which input data used to evaluate!"
                     )
                     return
                 else:
                     # print(json.dumps(data, indent=2))
-                    input_data = data["input"][input_model_name]
+                    input_data = data["input"][student_input_model_name]
             if llm is None:
                 if model_parameters is None:
                     llm = ChatOpenAI(model_name="gpt-4-1106-preview", temperature=0)
@@ -279,16 +278,13 @@ def llm_as_examiner(
             )
 
             # save result
-            output_path = os.path.join(
-                os.getcwd(), output_dir, "examiner", section, input_model_name
-            )
+            dataset[index]["result"][llm.model_name] = result
+
+            output_path = os.path.join(os.getcwd(), output_dir)
             if not os.path.isdir(output_path):
                 os.makedirs(output_path)
-            if section == Section.qa.value:
-                file_name = f"case{case}-turn{turn}.txt"
-            else:
-                file_name = f"case{case}.txt"
-            save_result(os.path.join(output_path, file_name), result)
+                output_path = os.path.join(output_path, "evaluation.json")
+            save_result(output_path, dataset)
 
     print("Finish")
 
@@ -300,22 +296,35 @@ def main(
     turn,
     dataset_path,
     output_dir,
-    model_name,
-    input_model_name=None,
+    student_model=None,
+    student_input_model=None,
+    examiner_model=None,
 ):
-    if task == "student":
+    if task != "student" and task != "examiner" and task != "all":
+        print("Invalid task!")
+        return
+
+    if task == "student" or task == "all":
+        if not student_model:
+            print(
+                "Missing student model name specifies which model used for generating!"
+            )
+            return
         llm_as_medical_student(
             dataset_path,
             output_dir,
             section,
             case,
             turn,
-            model_parameters={"model_name": model_name, "temperature": 0},
+            model_parameters={"model_name": student_model, "temperature": 0},
+            # prompt_template="",
         )
-    elif task == "examiner":
-        if input_model_name is None:
+    if task == "examiner" or task == "all":
+        if task == "all":
+            student_input_model = student_model
+        if not student_input_model:
             print(
-                "Missing student model name specifies which input data used for evaluating!"
+                "Missing student input model name specifies which input data used for evaluating!"
             )
             return
         llm_as_examiner(
@@ -324,27 +333,31 @@ def main(
             section,
             case,
             turn,
-            input_model_name=input_model_name,
+            model_parameters={"model_name": examiner_model, "temperature": 0},
+            student_input_model_name=student_input_model,
+            # prompt_template="",
         )
-    else:
-        print("Invalid task!")
 
 
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-t",
         "--task",
         type=str,
-        required=True,
-        help="task to run (student or examiner)",
+        # required=True,
+        default="all",
+        help="task to run (student, examiner, or all)",
     )
     parser.add_argument(
+        "-s",
         "--section",
         type=str,
         required=True,
         help="section name (qa, physical_exam, closure, diagnosis)",
     )
     parser.add_argument(
+        "-c",
         "--case",
         type=str,
         default="1-10",
@@ -357,29 +370,45 @@ def _parse_args():
         help="conversation turn",
     )
     parser.add_argument(
+        "-d",
         "--dataset",
         type=str,
         default="data",
         help="dataset path or directory that contain dataset",
     )
     parser.add_argument(
+        "-o",
         "--output",
         type=str,
         default="output",
         help="directory which store the output results",
     )
     parser.add_argument(
-        "-m",
-        "--model",
-        type=str,
-        default="gpt-4-1106-preview",
-        help="model name",
-    )
-    parser.add_argument(
+        "-sm",
         "--student_model",
         type=str,
-        help="student model name specifies which input data used for evaluating",
+        # default="gpt-4-1106-preview",
+        help="student model name specifies which model used for generating",
     )
+    parser.add_argument(
+        "-sim",
+        "--student_input_model",
+        type=str,
+        help="student input model name specifies which input data used for evaluating",
+    )
+    parser.add_argument(
+        "-em",
+        "--examiner_model",
+        type=str,
+        default="gpt-4-1106-preview",
+        help="examiner model name specifies which model used for evaluating",
+    )
+    # parser.add_argument(
+    #     "-p",
+    #     "--prompt",
+    #     type=str,
+    #     help="prompt file path",
+    # )
     args = parser.parse_args()
     return args
 
@@ -395,8 +424,9 @@ if __name__ == "__main__":
         args.turn,
         args.dataset,
         args.output,
-        args.model,
         args.student_model,
+        args.student_input_model,
+        args.examiner_model,
     )
 
     # main(

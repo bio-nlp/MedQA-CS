@@ -7,8 +7,10 @@ Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documenta
 
 ## Prerequisites
 ```
-pip install langchain, python-dotenv
+pip install langchain,langchain-openai,python-dotenv
 ```
+
+- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
 
 ## Run with Command Line Arguments
 
@@ -68,12 +70,14 @@ python run_dataset.py --task examiner --section physical_exam --case 5 --dataset
 - The langchain library is used for interacting with the LLM. Ensure you have the necessary permissions and API keys if required by the library.
 
 ## Todo
-- Add `all` task
-- Store result to new dataset
+- ~~Add `all` task~~
+- ~~Store result to new dataset~~
+- Store medical student result to both dataset
 - Add `prompt_path`
-- Add `student_model`, `student_input_model`, `examiner_model`
+- ~~Add `student_model`, `student_input_model`, `examiner_model`~~
 - Add model name similar matching
-- Add data viewer
+- ~~Add data viewer~~
+- Improve data viewer
 - Add logging
 
 # Dataset Format
