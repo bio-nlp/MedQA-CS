@@ -1,6 +1,9 @@
 # MedQA-CS
 Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documentation
 
+# Dataset
+[MedQA-CS-Student](https://huggingface.co/api/datasets/bio-nlp-umass/MedQA-CS-Student) and [MedQA-CS-Exam](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Exam) are available through Huggingface.
+
 # How to run
 
 `run_dataset.py` is designed to run a Language Model (LLM) on a JSON dataset for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
