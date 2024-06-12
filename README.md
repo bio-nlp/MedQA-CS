@@ -2,7 +2,7 @@
 Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documentation
 
 # Dataset
-[MedQA-CS-Student](https://huggingface.co/api/datasets/bio-nlp-umass/MedQA-CS-Student) and [MedQA-CS-Exam](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Exam) are available through Huggingface.
+[MedQA-CS-Student](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Student) and [MedQA-CS-Exam](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Exam) are available through Huggingface.
 
 # How to run
 
