@@ -75,13 +75,14 @@ python run_dataset.py --task examiner --section physical_exam --case 5 --dataset
 ## Todo
 - ~~Add `all` task~~
 - ~~Store result to new dataset~~
-- Store medical student result to both dataset
+- ~~Store medical student result to both dataset~~
 - Add `prompt_path`
 - ~~Add `student_model`, `student_input_model`, `examiner_model`~~
 - Add model name similar matching
 - ~~Add data viewer~~
 - Improve data viewer
 - Add logging
+- Add running model as batch
 
 # Dataset Format
 
