@@ -24,15 +24,28 @@ python main.py [-h] -t {student,examiner,all} -s {qa,physical_exam,closure,diagn
 ```
 
 ### Arguments
-
-- `--task` (Required): Specify the task to run. Options are `student` or `examiner`.
-- `--section` (Required): Specify the section name from the dataset to process. Options are `qa`, `physical_exam`, `closure`, or `diagnosis`.
-- `--case` (default: `1-10`): Specify the case number or range of cases to run. Use a hyphen (-) to specify a range. (e.g. `5-12`)
-- `--turn` (default: `all`): Specify the conversation turn or range of turns to run. Use a hyphen (-) to specify a range.  Use `all` to run all turns. (e.g. `1-5`)
-- `--dataset` (default: `dataset`): Specify the path to the dataset directory or the dataset JSON file.
-- `--output` (default: `output`): Specify the directory where the output results will be stored.
-- `-m`, `--model` (default: `gpt-4`): Specify the model name to use for the LLM.
-- `--student_model` (optional): Specify the input student model name used for evaluation when running the `examiner` task.
+```
+  -h, --help            show this help message and exit
+  -t {student,examiner,all}, --task {student,examiner,all}
+                        Task to run: student (generate responses), examiner (evaluate responses), or all (both)
+                        (default: all)
+  -s {qa,physical_exam,closure,diagnosis}, --section {qa,physical_exam,closure,diagnosis}
+                        Section of the medical examination (qa, physical_exam, closure, diagnosis) (default: None)
+  -c CASE, --case CASE  Case number or range (e.g., '1-44' for cases 1 through 44) (default: None)
+  --turn TURN           Specific conversation turn or 'all' for entire conversation (default: all)
+  -sd MED_STUDENT_DATASET, --med_student_dataset MED_STUDENT_DATASET
+                        Path to the medical student dataset for generation task (default: data/med-student.json)
+  -ed MED_EXAM_DATASET, --med_exam_dataset MED_EXAM_DATASET
+                        Path to the medical examination dataset for examiner task (default: data/med-exam.json)
+  -o OUTPUT, --output OUTPUT
+                        Path to output file or directory. If a directory is specified, output files will be saved
+                        with default names. (default: output/)
+  -sm STUDENT_MODEL, --student_model STUDENT_MODEL
+                        Name of the model to use for generating student responses (default: None)
+  -em EXAMINER_MODEL, --examiner_model EXAMINER_MODEL
+                        Name of the model to use for evaluating responses (default: gpt-4-1106-preview)
+  -v, --verbose         Enable verbose output (default: False)
+  ```
 
 ## Examples
 
