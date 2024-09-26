@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from run import Section
+from main import Section
 
 
 class DataViewer:

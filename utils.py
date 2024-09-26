@@ -15,8 +15,22 @@ def extract_json_data(text):
             return None
 
 
-def readable_json(text):
+def readable_json(data):
+    text = data["output"]
     return json.dumps(extract_json_data(text), indent=2)
+
+
+def output_only_post_processing(data: dict) -> str:
+    """
+    A post-processing function that returns only the output from the data dictionary.
+
+    Args:
+        data (dict): A dictionary containing 'prompt', 'input', and 'output' keys.
+
+    Returns:
+        str: The value associated with the 'output' key.
+    """
+    return data["output"]
 
 
 # def medical_student_closure_post_processing(text):
@@ -32,7 +46,8 @@ def readable_json(text):
 #     return output
 
 
-def medical_student_physical_exam_post_processing(text):
+def medical_student_physical_exam_post_processing(data):
+    text = data["output"]
     physical_exams_json = extract_json_data(text)
     output = ""
     for key in physical_exams_json.keys():
@@ -47,8 +62,8 @@ def medical_student_physical_exam_post_processing(text):
     return output
 
 
-def medical_student_diagnosis_post_processing(text):
-    print(type(text))
+def medical_student_diagnosis_post_processing(data):
+    text = data["output"]
     diagnosis_json = extract_json_data(text)
     output = ""
     index = 1
@@ -92,7 +107,7 @@ def medical_student_diagnosis_post_processing(text):
     return output
 
 
-def examiner_diagnosis_post_processing(text):
+def examiner_diagnosis_post_processing(data):
     def get_num_physical_finding(text):
         lines = text.strip().split("\n")
         count = 0
@@ -116,9 +131,12 @@ def examiner_diagnosis_post_processing(text):
 
     def replace_total_score(result_dict, finding_count):
         total_score = result_dict["total score"]
-        max_score = 40 + 9 + finding_count
+        max_score = 30 + 9 + finding_count + 10
         result_dict["total score"] = f"{total_score}/{max_score}"
         result_dict["accuracy"] = "{:.2%}".format(total_score / max_score)
 
-    text = extract_json_data(text)
-    return json.dumps(text, indent=2)
+    result_dict = extract_json_data(data["output"])
+    num_physical_finding = get_num_physical_finding(data["input"]["target"])
+    replace_total_score(result_dict, num_physical_finding)
+
+    return json.dumps(result_dict, indent=2)
