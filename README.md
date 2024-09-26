@@ -6,7 +6,7 @@ Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documenta
 
 # How to run
 
-`run_dataset.py` is designed to run a Language Model (LLM) on a JSON dataset for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
+`main.py` is designed to run a Language Model (LLM) on a JSON dataset for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
 
 ## Prerequisites
 ```
@@ -20,7 +20,7 @@ pip install langchain,langchain-openai,python-dotenv
 To run the program, use the following command:
 
 ```
-python run_dataset.py --task TASK --section SECTION [--case CASE] [--turn TURN] [--dataset DATASET_PATH] [--output OUTPUT_DIR] [-m MODEL] [--student_model STUDENT_MODEL]
+python main.py [-h] -t {student,examiner,all} -s {qa,physical_exam,closure,diagnosis} -c CASE [--turn TURN] [-msd MED_STUDENT_DATASET] [-med MED_EXAM_DATASET] [-o OUTPUT] [-sm STUDENT_MODEL] [-em EXAMINER_MODEL] [-v]
 ```
 
 ### Arguments
@@ -39,13 +39,13 @@ python run_dataset.py --task TASK --section SECTION [--case CASE] [--turn TURN] 
 1. Run LLM as `student` task for the `qa` section on cases 1-10 and all conversation turns, using the `gpt-4-1106-preview` model and the dataset located in the `dataset` directory:
 
 ```
-python run_dataset.py --task student --section qa --case 1-10 --turn all --dataset dataset --output output -m gpt-4-1106-preview
+python main.py --task student --section qa --case 1-10 --turn all --med_exam_dataset ./dataset/med-student.json --output ./output -student_model gpt-4o-mini
 ```
 
 2. Run the `examiner` task for the `physical_exam` section on case 5, using the `gpt-4-1106-preview` model as examiner and the evaluating the input of student's answer from the `gpt-3.5-turbo-1106` model, dataset located in the `dataset` directory, output in `/output` directory, :
 
 ```
-python run_dataset.py --task examiner --section physical_exam --case 5 --dataset dataset --output output -m gpt-4-1106-preview --input_model gpt-3.5-turbo-1106
+python main.py --task examiner --section physical_exam --case 5 --med_exam_dataset ./dataset/med-student.json --output ./output --student_model gpt-3.5-turbo-1106 --examiner_model gpt-4-1106-preview 
 ```
 
 ## Run from program
@@ -116,10 +116,10 @@ Each entry in the JSON file is structured as follows:
 ### Example Case Object
 ```
 {
-  "unique_id": 1,
+  "unique_id": 5,
   "section": "qa",
   "case_id": 1,
-  "conversation_turn_id": 1,
+  "conversation_turn_id": 5,
   "input": {
     "opening": "Opening Scenario:\n\...
     "chat_history": "N/A"
@@ -140,6 +140,7 @@ Each entry in the JSON file is structured as follows:
     "claude-3-haiku-20240307": "Can ...
     "claude-3-opus-20240229": "What ...
   }
+}
 ```
 
 
@@ -165,55 +166,9 @@ Each entry in the JSON file is structured as follows:
     - `input_variables`: An array of input variable names used in the prompt template.
     - `template`: A prompt template that includes placeholders for the input variables.
 
-- `result`: An object containing the model name for the input data and evaluation result for that input model name.
+- `result`: An object containing the model name for the input data and examiner model name, and the evaluation result.
 
 ### Example Case Object
 ```
-{
-  "unique_id": 40,
-  "section": "diagnosis",
-  "case_id": 1,
-  "conversation_turn_id": 1,
-  "input": {
-    "gpt-3.5-turbo-1106": {
-      "pred": "Diagnosis #1: Acute Coronary...
-      "target": "Diagnosis #1: Myocardial i...
-      "additional_diagnosis": "-Aortic diss...
-    },
-    "gpt-4-1106-preview": {
-      "pred": "Diagnosis #1: Acute Coronary...
-      "target": "Diagnosis #1: Myocardial i...
-      "additional_diagnosis": "-Aortic diss...
-    },
-    "claude-3-sonnet-20240229": {
-      "pred": "Diagnosis #1: Acute Coronary...
-      "target": "Diagnosis #1: Myocardial i...
-      "additional_diagnosis": "-Aortic diss...
-    },
-    "claude-3-haiku-20240307": {
-      "pred": "",
-      "target": "Diagnosis #1: Myocardial i...
-      "additional_diagnosis": "-Aortic diss...
-    },
-    "claude-3-opus-20240229": {
-      "pred": "",
-      "target": "Diagnosis #1: Myocardial i...
-      "additional_diagnosis": "-Aortic diss...
-    }
-  },
-  "prompt": {
-    "_type": "prompt",
-    "input_variables": [
-      "predicted_diagnosis",
-      "target_diagnosis",
-      "additional_diagnosis"
-    ],
-    "template": "You are an evaluator for t...
-  },
-  "result": {
-    "gpt-3.5-turbo-1106": "{\n  \"diagnosis...
-    "gpt-4-1106-preview": "{\n  \"diagnosis...
-    "claude-3-sonnet-20240229": "{\n  \"dia...
-    "claude-3-haiku-20240307": "",
-    "claude-3-opus-20240229": ""
+
 ```
