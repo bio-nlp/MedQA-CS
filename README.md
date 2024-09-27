@@ -1,37 +1,36 @@
 # MedQA-CS
 Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documentation
 
-# Dataset
+## Dataset
 [MedQA-CS-Student](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Student) and [MedQA-CS-Exam](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Exam) are available through Huggingface.
 
-# How to run
+## How to run
 
-`main.py` is designed to run a Language Model (LLM) on a JSON dataset for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
+`main.py` is designed to run a Language Model (LLM) on JSON datasets for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
 
-## Prerequisites
+### Prerequisites
 ```
-pip install langchain,langchain-openai,python-dotenv
+pip install -r requirements.txt
 ```
 
-- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
+- Get an OpenAI API key and set it as an environment variable (`OPENAI_API_KEY`)
 
-## Run with Command Line Arguments
+### Run with Command Line Arguments
 
 To run the program, use the following command:
 
 ```
-python main.py [-h] -t {student,examiner,all} -s {qa,physical_exam,closure,diagnosis} -c CASE [--turn TURN] [-msd MED_STUDENT_DATASET] [-med MED_EXAM_DATASET] [-o OUTPUT] [-sm STUDENT_MODEL] [-em EXAMINER_MODEL] [-v]
+python main.py [-h] -t {student,examiner,all} -s {qa,physical_exam,closure,diagnosis} -c CASE [--turn TURN] [-sd MED_STUDENT_DATASET] [-ed MED_EXAM_DATASET] [-o OUTPUT] [-sm STUDENT_MODEL] [-em EXAMINER_MODEL] [-v]
 ```
 
-### Arguments
+#### Arguments
 ```
   -h, --help            show this help message and exit
   -t {student,examiner,all}, --task {student,examiner,all}
                         Task to run: student (generate responses), examiner (evaluate responses), or all (both)
-                        (default: all)
   -s {qa,physical_exam,closure,diagnosis}, --section {qa,physical_exam,closure,diagnosis}
-                        Section of the medical examination (qa, physical_exam, closure, diagnosis) (default: None)
-  -c CASE, --case CASE  Case number or range (e.g., '1-44' for cases 1 through 44) (default: None)
+                        Section of the medical examination
+  -c CASE, --case CASE  Case number or range (e.g., '1-44' for cases 1 through 44)
   --turn TURN           Specific conversation turn or 'all' for entire conversation (default: all)
   -sd MED_STUDENT_DATASET, --med_student_dataset MED_STUDENT_DATASET
                         Path to the medical student dataset for generation task (default: data/med-student.json)
@@ -41,61 +40,53 @@ python main.py [-h] -t {student,examiner,all} -s {qa,physical_exam,closure,diagn
                         Path to output file or directory. If a directory is specified, output files will be saved
                         with default names. (default: output/)
   -sm STUDENT_MODEL, --student_model STUDENT_MODEL
-                        Name of the model to use for generating student responses (default: None)
+                        Name of the model to use for generating student responses
   -em EXAMINER_MODEL, --examiner_model EXAMINER_MODEL
                         Name of the model to use for evaluating responses (default: gpt-4-1106-preview)
-  -v, --verbose         Enable verbose output (default: False)
-  ```
-
-## Examples
-
-1. Run LLM as `student` task for the `qa` section on cases 1-10 and all conversation turns, using the `gpt-4-1106-preview` model and the dataset located in the `dataset` directory:
-
-```
-python main.py --task student --section qa --case 1-10 --turn all --med_exam_dataset ./dataset/med-student.json --output ./output -student_model gpt-4o-mini
+  -v, --verbose         Enable verbose output
 ```
 
-2. Run the `examiner` task for the `physical_exam` section on case 5, using the `gpt-4-1106-preview` model as examiner and the evaluating the input of student's answer from the `gpt-3.5-turbo-1106` model, dataset located in the `dataset` directory, output in `/output` directory, :
+### Examples
+
+1. Run LLM as `student` task for the `qa` section on cases 1-10 and all conversation turns, using the `gpt-4o-mini` model:
 
 ```
-python main.py --task examiner --section physical_exam --case 5 --med_exam_dataset ./dataset/med-student.json --output ./output --student_model gpt-3.5-turbo-1106 --examiner_model gpt-4-1106-preview 
+python main.py --task student --section qa --case 1-10 --turn all --med_student_dataset ./data/med-student.json --output ./output --student_model gpt-4o-mini
 ```
 
-## Run from program
+2. Run the `examiner` task for the `physical_exam` section on case 5, using the `gpt-4-1106-preview` model as examiner and evaluating the input of student's answer from the `gpt-3.5-turbo-1106` model:
 
+```
+python main.py --task examiner --section physical_exam --case 5 --med_exam_dataset ./data/med-exam.json --output ./output --student_model gpt-3.5-turbo-1106 --examiner_model gpt-4-1106-preview 
+```
 
-## Function and Input Argument Explanations
-- `load_data(dataset_path, generation)`: Loads data from a JSON file and organizes it into a lookup structure. It takes a path to the dataset and a boolean indicating whether to load the generation or evaluation dataset.
+## Key Functions
 
-- `save_result(path, result)`: Saves the given result string to a file at the specified path.
+- `load_data(dataset_path, is_examiner)`: Loads data from a JSON file. It takes a path to the dataset and a boolean indicating whether to load the examiner dataset.
+
+- `save_result(path, dataset, is_examiner)`: Saves the updated dataset to a JSON file at the specified path.
 
 - `parse_range(val)`: Parses a string that may represent a range (e.g., "1-10") or a single number (e.g., "5") and returns a tuple of integers.
 
-- `run_model(llm, prompt_template, input_data, prev_processing, post_processing, **kwargs)`: Executes the LLM with the given prompt template and input data. It includes optional pre- and post-processing functions.
+- `run_model(model, prompt_template, input_data, pre_processing_func, post_processing_func, **kwargs)`: Executes the LLM with the given prompt template and input data. It includes optional pre- and post-processing functions.
 
-- `llm_as_medical_student(*args, **kwargs)`: Simulates an LLM acting as a medical student on a dataset. It accepts various arguments for customization.
+- `llm_as_medical_student(*args, **kwargs)`: Simulates an LLM acting as a medical student on a dataset.
 
-- `llm_as_examiner(*args, **kwargs)`: Simulates an LLM acting as an examiner on a dataset. It also accepts various arguments for customization.
+- `llm_as_examiner(*args, **kwargs)`: Simulates an LLM acting as an examiner on a dataset.
 
-- `main(*args, **kwargs)`: The main function that orchestrates the execution of the program based on the provided command-line arguments.
+- `main(args)`: The main function that orchestrates the execution of the program based on the provided command-line arguments.
 
-- `_parse_args()`: Utilizes argparse to define and parse command-line arguments for the program.
+- `parse_args()`: Utilizes argparse to define and parse command-line arguments for the program.
 
 ## Notes
-- Make sure you have the required dependencies installed (`langchain`, `langchain_openai`, `python-dotenv`) before running the program.
-- The langchain library is used for interacting with the LLM. Ensure you have the necessary permissions and API keys if required by the library.
+- The script uses the langchain library for interacting with the LLM. Ensure you have the necessary permissions and API keys if required by the library.
+- Logging is implemented throughout the script. Use the `-v` or `--verbose` flag for more detailed logging information.
 
 ## Todo
-- ~~Add `all` task~~
-- ~~Store result to new dataset~~
-- ~~Store medical student result to both dataset~~
-- Add `prompt_path`
-- ~~Add `student_model`, `student_input_model`, `examiner_model`~~
-- Add model name similar matching
-- ~~Add data viewer~~
+- Add `prompt_path` functionality
+- Implement model name similar matching
 - Improve data viewer
-- Add logging
-- Add running model as batch
+- Add functionality for running models in batch
 
 # Dataset Format
 
