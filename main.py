@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import json
@@ -12,6 +13,7 @@ from typing import Callable, Union, Tuple
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
+from langchain_community.callbacks import get_openai_callback
 
 import utils
 
@@ -145,7 +147,11 @@ def run_model(
     pre_processed_input = pre_processing_func(input_data)
 
     # Run the model and get the result
-    raw_result = eval_chain.invoke(pre_processed_input)
+    if use_langfuse:
+        config = {"callbacks": [langfuse_handler]}
+    else:
+        config = {}
+    raw_result = eval_chain.invoke(pre_processed_input, config=config)
 
     logging.debug(raw_result)
 
@@ -518,11 +524,9 @@ def llm_as_examiner(
             logging.debug(result)
 
             # save result
-            logging.info(f"Saving result for {input_student_model_name} with {examiner_model_name}")
-            logging.info(f"not in: {input_student_model_name not in data['output']} data: {data['output'].keys()}")
             if input_student_model_name not in data["output"]:
                 data["output"][input_student_model_name] = {}
-                logging.info(f"Creating new entry for {input_student_model_name}")
+                logging.debug(f"Creating new entry for {input_student_model_name}")
             data["output"][input_student_model_name][examiner_model_name] = result
 
             # save updated dataset
@@ -590,6 +594,10 @@ def main(args):
 
     logging.info(f"Starting task: {args.task}")
     logging.info(f"Section: {args.section}, Case: {args.case}, Turn: {args.turn}")
+    if args.task=="student":
+        logging.info(f"Model: {args.student_model}")
+    else:
+        logging.info(f"Model: {args.student_model}, {args.examiner_model}")
 
     try:
         if args.task in ["student", "all"]:
@@ -743,11 +751,32 @@ def parse_args():
     return args
 
 
+def setup_langfuse():
+    if (
+        os.environ.get("LANGFUSE_PUBLIC_KEY")
+        and os.environ.get("LANGFUSE_SECRET_KEY")
+        and os.environ.get("LANGFUSE_HOST")
+    ):
+        from langfuse.callback import CallbackHandler
+        logging.info("Using LangFuse")
+        return True, CallbackHandler()
+    return False, None
+
+
 if __name__ == "__main__":
     args = parse_args()
-
+    dotenv.load_dotenv()
     setup_logging(args.verbose)
     logging.info(args)
-    dotenv.load_dotenv()
+    use_langfuse, langfuse_handler = setup_langfuse()
 
-    main(args)
+    with get_openai_callback() as cb:
+        main(args)
+
+        logging.info("-" * 40)
+        logging.info(f"Successful Requests: {cb.successful_requests}")
+        logging.info(f"Total Tokens: {cb.total_tokens}")
+        logging.info(f"Prompt Tokens: {cb.prompt_tokens}")
+        logging.info(f"Completion Tokens: {cb.completion_tokens}")
+        logging.info(f"Total Cost (USD): ${cb.total_cost}")
+        logging.info("-" * 40)
