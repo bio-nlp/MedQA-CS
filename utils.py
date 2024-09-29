@@ -1,15 +1,16 @@
 import json
 import re
+import json_repair
 
 
 def extract_json_data(text):
     json_text = re.search(r"```json\n?({[\w\W]+})[\n]?```", text)  # find ```json{}```
     if json_text:
-        return json.loads(json_text.group(1))
+        return json_repair.loads(json_text.group(1))
     else:
         json_text = re.search(r"{[\w\W]+}", text)  # only find {}
         if json_text:
-            return json.loads(json_text.group(0))
+            return json_repair.loads(json_text.group(0))
         else:
             print("No JSON found in text")
             return None
@@ -44,6 +45,16 @@ def output_only_post_processing(data: dict) -> str:
 #         + closure_json["question"]
 #     )
 #     return output
+
+
+def medical_student_qa_post_processing(data):
+    text = data["output"]
+    qa_json = extract_json_data(text)
+
+    if not qa_json:
+        return "No JSON found in text"
+
+    return qa_json["question"]
 
 
 def medical_student_physical_exam_post_processing(data):

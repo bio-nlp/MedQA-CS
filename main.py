@@ -251,7 +251,7 @@ def llm_as_medical_student(
 
     # Define post-processing functions for different sections
     post_processing_func = {
-        Section.qa.value: utils.output_only_post_processing,
+        Section.qa.value: utils.medical_student_qa_post_processing,
         Section.closure.value: utils.output_only_post_processing,
         Section.physical_exam.value: utils.medical_student_physical_exam_post_processing,
         Section.diagnosis.value: utils.medical_student_diagnosis_post_processing,  # TODO: handle gpt3 broken json
@@ -594,7 +594,7 @@ def main(args):
 
     logging.info(f"Starting task: {args.task}")
     logging.info(f"Section: {args.section}, Case: {args.case}, Turn: {args.turn}")
-    if args.task=="student":
+    if args.task == "student":
         logging.info(f"Model: {args.student_model}")
     else:
         logging.info(f"Model: {args.student_model}, {args.examiner_model}")
@@ -758,6 +758,7 @@ def setup_langfuse():
         and os.environ.get("LANGFUSE_HOST")
     ):
         from langfuse.callback import CallbackHandler
+
         logging.info("Using LangFuse")
         return True, CallbackHandler()
     return False, None
