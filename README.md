@@ -4,16 +4,23 @@ Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documenta
 ## Dataset
 [MedQA-CS-Student](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Student) and [MedQA-CS-Exam](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Exam) are available through Huggingface.
 
+**<span style="color: red; font-weight: bold;">⚠️ Important: Please note that the scores currently obtained using the GPT-4 judge may differ from those obtained a few months ago. We are aware of this discrepancy and are working on updating to a Llama-examiner to address this issue. Please keep mindful when using the data for benchmarking or comparison.</span>**
+
 ## How to run
 
 `main.py` is designed to run a Language Model (LLM) on JSON datasets for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
 
-### Prerequisites
+### Installation
+We used `python 3.10` to develop this project.
 ```
 pip install -r requirements.txt
 ```
 
-- Get an OpenAI API key and set it as an environment variable (`OPENAI_API_KEY`)
+#### Run LLM with OpenAI API
+Create a environment variable file `.env` in the root directory and set your OpenAI API key in it.
+```
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```
 
 ### Run with Command Line Arguments
 
@@ -30,7 +37,7 @@ python main.py [-h] -t {student,examiner,all} -s {qa,physical_exam,closure,diagn
                         Task to run: student (generate responses), examiner (evaluate responses), or all (both)
   -s {qa,physical_exam,closure,diagnosis}, --section {qa,physical_exam,closure,diagnosis}
                         Section of the medical examination
-  -c CASE, --case CASE  Case number or range (e.g., '1-44' for cases 1 through 44)
+  -c CASE, --case CASE  Single case number or a range of case numbers or 'all' (e.g., '1-44' for cases 1 through 44)
   --turn TURN           Specific conversation turn or 'all' for entire conversation (default: all)
   -sd MED_STUDENT_DATASET, --med_student_dataset MED_STUDENT_DATASET
                         Path to the medical student dataset for generation task (default: data/med-student.json)
@@ -60,6 +67,19 @@ python main.py --task student --section qa --case 1-10 --turn all --med_student_
 python main.py --task examiner --section physical_exam --case 5 --med_exam_dataset ./data/med-exam.json --output ./output --student_model gpt-3.5-turbo-1106 --examiner_model gpt-4-1106-preview 
 ```
 
+3. Run the `examiner` task for the `diagnosis` section on all cases and using new student result from `gpt-4o-mini` model generated from the `student` task:
+```
+python main.py --task examiner --section diagnosis --case all --med_student_dataset ./output/med-student-with-gpt-4o-mini.json --med_exam_dataset ./data/med-exam.json --student_model gpt-4o-mini
+```
+
+### LangFuse
+To use [LangFuse](https://www.langfuse.com/) in this project, you need to set the following environment variables:
+```
+LANGFUSE_SECRET_KEY=<YOUR_LANGFUSE_SECRET_KEY>
+LANGFUSE_PUBLIC_KEY=<YOUR_LANGFUSE_PUBLIC_KEY>
+LANGFUSE_HOST=<YOUR_LANGFUSE_HOST>
+```
+
 ## Key Functions
 
 - `load_data(dataset_path, is_examiner)`: Loads data from a JSON file. It takes a path to the dataset and a boolean indicating whether to load the examiner dataset.
@@ -82,97 +102,8 @@ python main.py --task examiner --section physical_exam --case 5 --med_exam_datas
 - The script uses the langchain library for interacting with the LLM. Ensure you have the necessary permissions and API keys if required by the library.
 - Logging is implemented throughout the script. Use the `-v` or `--verbose` flag for more detailed logging information.
 
+
 ## Todo
-- Add `prompt_path` functionality
+- Fine-tune a Llama-examiner using GPT-4 examiner's instruction learning data
 - Implement model name similar matching
-- Improve data viewer
 - Add functionality for running models in batch
-
-# Dataset Format
-
-## `generation.json`
-
-Each entry in the JSON file is structured as follows:
-
-- **`unique_id`**: A unique identifier to distinguish each entry.
-
-- `section`: The type of content, which can be one of the following:
-    - `qa`: Question-answer section.
-    - `physical_exam`: Physical examination section.
-    - `closure`: Closure section.
-    - `diagnosis`: Diagnosis section.
-
-- `case_id`: The identifier of the case number, ranging from 1 to 44.
-
-- `conversation_turn_id`: Indicates the sequence of dialogue for the `qa` section. All other sections have `conversation_turn_id` with 1.
-
-- `input`: An object containing the input variable name and input data.
-
-- `ground_truth_output`: The expected response or output from the examiner.
-
-- `prompt`: An object containing the prompt:
-    - `_type`: A string indicate this a prompt
-    - `input_variables`: An array of input variable names used in the prompt template.
-    - `template`: A prompt template that includes placeholders for the input variables.
-
-- `output`: An object containing the running model name and output data generate from that model.
-
-### Example Case Object
-```
-{
-  "unique_id": 5,
-  "section": "qa",
-  "case_id": 1,
-  "conversation_turn_id": 5,
-  "input": {
-    "opening": "Opening Scenario:\n\...
-    "chat_history": "N/A"
-  },
-  "ground_truth_output": "\"What con...
-  "prompt": {
-    "_type": "prompt",
-    "input_variables": [
-      "opening",
-      "chat_history"
-    ],
-    "template": "You are a doctor an...
-  },
-  "output": {
-    "gpt-3.5-turbo-1106": "When did ...
-    "gpt-4-1106-preview": "Can you d...
-    "claude-3-sonnet-20240229": "Can...
-    "claude-3-haiku-20240307": "Can ...
-    "claude-3-opus-20240229": "What ...
-  }
-}
-```
-
-
-## `evaluation.json`
-Each entry in the JSON file is structured as follows:
-
-- **`unique_id`**: A unique identifier to distinguish each entry.
-
-- `section`: The type of content, which can be one of the following:
-    - `qa`: Question-answer section.
-    - `physical_exam`: Physical examination section.
-    - `closure`: Closure section.
-    - `diagnosis`: Diagnosis section.
-
-- `case_id`: The identifier of the case number, ranging from 1 to 44.
-
-- `conversation_turn_id`: Indicates the sequence of dialogue for the `qa` section. All other sections have `conversation_turn_id` with 1.
-
-- `input`: An object containing the model name that generate this input data waiting for evaluating, and another object for each input model name containing the input variable name and input data.
-
-- `prompt`: An object containing the prompt:
-    - `_type`: A string indicate this a prompt
-    - `input_variables`: An array of input variable names used in the prompt template.
-    - `template`: A prompt template that includes placeholders for the input variables.
-
-- `result`: An object containing the model name for the input data and examiner model name, and the evaluation result.
-
-### Example Case Object
-```
-
-```

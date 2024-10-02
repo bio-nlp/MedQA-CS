@@ -170,9 +170,11 @@ def run_model(
 def llm_as_medical_student(
     section: str,
     case: str,
-    conversation_turn: str = "all",  # only used for QA, other sections only has 1 conversation turn
+    conversation_turn: str = "all",
+    # only used for QA, other sections only has 1 conversation turn
     med_student_dataset_path: str = "data/med-student.json",
-    output_path: str = "output/",  # the path for the output file or a path to a folder that store the output file
+    output_path: str = "output/",
+    # the path for the output file or a path to a folder that store the output file
     model=None,  # one of the langchain model class, will override model_parameters
     model_parameters: dict = None,  # only used if model is not None
     prompt_template: dict[
@@ -228,6 +230,10 @@ def llm_as_medical_student(
 
     # Parse case range
     start_case, end_case = (1, 44) if str(case) == "all" else parse_range(case)
+    # Check if parse_range returned None
+    if start_case is None or end_case is None:
+        logging.error("Invalid case range provided. Exiting.")
+        sys.exit(1)
 
     # Determine whether to use dataset prompt template or custom prompt
     use_dataset_prompt_template = prompt_template is None
@@ -254,7 +260,7 @@ def llm_as_medical_student(
         Section.qa.value: utils.medical_student_qa_post_processing,
         Section.closure.value: utils.output_only_post_processing,
         Section.physical_exam.value: utils.medical_student_physical_exam_post_processing,
-        Section.diagnosis.value: utils.medical_student_diagnosis_post_processing,  # TODO: handle gpt3 broken json
+        Section.diagnosis.value: utils.medical_student_diagnosis_post_processing,
     }
     if post_processing is None:
         post_processing = post_processing_func[section]
@@ -303,10 +309,7 @@ def llm_as_medical_student(
             logging.debug(result)
 
             # save result
-            data["output"][
-                model.model_name
-                # "test-model"  # TODO: fix model name
-            ] = result  # TODO: dataset output model name
+            data["output"][model.model_name] = result
 
             # save updated dataset
             output_file_path = save_result(output_path, dataset, is_examiner=False)
@@ -318,13 +321,16 @@ def llm_as_medical_student(
 def llm_as_examiner(
     section: str,  # one of the section in Section enum
     case: str,  # case number from 1 to 44 or "all"
-    conversation_turn: str = "all",  # only used for QA, other sections only has 1 conversation turn
+    conversation_turn: str = "all",
+    # only used for QA, other sections only has 1 conversation turn
     med_student_dataset_path: str = None,
     med_exam_dataset_path: str = "data/med-exam.json",
     output_path: str = "output/",
     model=None,  # one of the langchain model class
-    model_parameters=None,  # parameters used to initialize the model via langchainChatOpenAI class, only used if model is not None
-    input_student_model_name: str = None,  # the model name of the medical student's output that will be used as the examiner's input
+    model_parameters=None,
+    # parameters used to initialize the model via langchainChatOpenAI class, only used if model is not None
+    input_student_model_name: str = None,
+    # the model name of the medical student's output that will be used as the examiner's input
     prompt_template: dict[
         int, str
     ] = None,  # Custom prompt templates for each case number
@@ -398,7 +404,10 @@ def llm_as_examiner(
     dataset = load_data(med_exam_dataset_path, is_examiner=True)
 
     start_case, end_case = (1, 44) if str(case) == "all" else parse_range(case)
-    # TODO: Stop running if parse return None
+    # Check if parse_range returned None
+    if start_case is None or end_case is None:
+        logging.error("Invalid case range provided. Exiting.")
+        sys.exit(1)
 
     # Determine whether to use dataset prompt template or custom prompt
     use_dataset_prompt_template = prompt_template is None
@@ -574,18 +583,13 @@ def main(args):
         if not args.student_model:
             logging.error(
                 "Missing student model name. Please specify which input data to use for evaluation."
-            )  # TODO: improve wording
+            )
             sys.exit(1)
         if not args.examiner_model:
             logging.error(
                 "Missing examiner model name. Please specify which model to use for evaluation."
-            )  # TODO: improve wording
+            )
             sys.exit(1)
-        # if not args.med_student_dataset:# TODO:add documentation
-        #     logging.error(
-        #         "Missing medical student dataset. Please specify the dataset containing the student model's output to be used as input for evaluation."
-        #     )
-        #     sys.exit(1)
         if not args.med_exam_dataset:
             logging.error(
                 "Missing medical examination dataset. Please specify which dataset to use for evaluation."
@@ -727,7 +731,6 @@ def parse_args():
         "-sm",
         "--student_model",
         type=str,
-        # default="gpt-4o-mini",
         help="Name of the model to use for generating student responses",
     )
     parser.add_argument(
@@ -737,12 +740,6 @@ def parse_args():
         default="gpt-4-1106-preview",
         help="Name of the model to use for evaluating responses",
     )
-    # parser.add_argument(
-    #     "-p",
-    #     "--prompt",
-    #     type=str,
-    #     help="Path to the prompt file",
-    # )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose output"
     )
