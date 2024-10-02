@@ -1,6 +1,6 @@
 # Dataset Format
 
-## `generation.json`
+## `med-student.json`
 
 Each entry in the JSON file is structured as follows:
 
@@ -58,7 +58,7 @@ Each entry in the JSON file is structured as follows:
 ```
 
 
-## `evaluation.json`
+## `med-exam.json`
 Each entry in the JSON file is structured as follows:
 
 - **`unique_id`**: A unique identifier to distinguish each entry.
