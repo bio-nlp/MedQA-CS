@@ -4,8 +4,6 @@ Benchmarking LLMs Clinical Skills for Patient-Centered Diagnostics and Documenta
 ## Dataset
 [MedQA-CS-Student](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Student) and [MedQA-CS-Exam](https://huggingface.co/datasets/bio-nlp-umass/MedQA-CS-Exam) are available through Huggingface.
 
-**<span style="color: red; font-weight: bold;">⚠️ Important: Please note that the scores currently obtained using the GPT-4 judge may differ from those obtained a few months ago. We are aware of this discrepancy and are working on updating to a Llama-examiner to address this issue. Please keep mindful when using the data for benchmarking or comparison.</span>**
-
 ## How to run
 
 `main.py` is designed to run a Language Model (LLM) on JSON datasets for medical student and examiner tasks. The program supports several sections, including Question & Answer (QA), Physical Exam, Closure, and Diagnosis.
